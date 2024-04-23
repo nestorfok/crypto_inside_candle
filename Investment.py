@@ -112,7 +112,7 @@ class Investment():
                 self.file_name.loc[index, 'buyORsell'] = 0
 
 
-    def inside_candle_strategy(self, end_date):
+    def inside_candle_strategy(self, end_date, stop_loss=0.3, ratio=1) -> None:
         
         self.cal_signal()
 
@@ -122,8 +122,8 @@ class Investment():
         cur_date = self.file_name.index[0]
         end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
-        stop_loss = 0.97
-        stop_win = 1.03
+        stop_loss = 1 - stop_loss
+        stop_win = 1 + stop_loss * ratio
 
         while cur_date != end_date:
 

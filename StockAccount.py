@@ -196,7 +196,7 @@ class StockAccount():
 
         info_statment = {'average_return_per_trade': sum_pl_percent / len(self._pls),
                          'accumulated_return': (accumulated_percent - 1) * 100,
-                         'win_ratio': (win / loss) * 100,
+                         'win_ratio': (win / (win+loss)) * 100,
                          'max_win': max_win,
                          'max_loss': max_loss,
                          'total_trade': len(self._pls)}
