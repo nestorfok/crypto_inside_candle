@@ -112,7 +112,7 @@ class Investment():
                 self.file_name.loc[index, 'buyORsell'] = 0
 
 
-    def inside_candle_strategy(self, end_date, stop_loss=0.3, ratio=1) -> None:
+    def inside_candle_strategy_stop_win_loss_ratio(self, end_date, stop_loss=0.3, ratio=1) -> None:
         
         self.cal_signal()
 
@@ -136,6 +136,35 @@ class Investment():
                 self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
 
             if len(self.stockAccount.get_portfolios()) == 1 and (self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss):
+
+                price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+            cur_date += datetime.timedelta(days=1)
+
+
+    def inside_candle_strategy_reference_loss(self, end_date, ratio=1) -> None:
+        
+        self.cal_signal()
+
+        self.file_name.set_index("date", inplace=True)
+        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
+
+        cur_date = self.file_name.index[0]
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        while cur_date != end_date:
+
+            self.stockAccount.execute_limit_order(cur_date=cur_date)
+
+            if len(self.stockAccount.get_portfolios()) == 0 and self.file_name.loc[cur_date, "buyORsell"] == 1:
+
+                price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+                
+                self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+            if len(self.stockAccount.get_portfolios()) == 1 and (self.file_name.loc[cur_date, "close"] <= self.file_name.loc[cur_date, "max_value"] * ratio):
 
                 price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
 
