@@ -3,35 +3,66 @@ import sys
 class StockAccount():
 
     def __init__(self) -> None:
-        self._pls = []
-        self._buy_orders = []
-        self._sell_orders = []
-        self._transactions = []
-        self._portfolios = []
-        
-
-    def send_limit_buy_order(self, ticker, date, price, ls) -> None:
         """
-        order
+        pl structure
             - ticker
-            - date
-            - price
-            - ls: long is True / short is False
-            - buy: True
+            - buy_date
+            - buy_price
+            - sell_date
+            - sell_price
+            - pl
+            - pl_percent
         """
-        buy_order = {'ticker': ticker, 'date': date, 'price': price, 'ls': ls, 'buy': True}
-        self._buy_orders.append(buy_order)
-
-
-    def send_limit_sell_order(self, ticker, date, price, ls) -> None:
+        self._pls = []
         """
-        order
+        order structure
             - ticker
             - date
             - price
             - ls: long is True / short is False
             - buy: False
         """
+        self._buy_orders = []
+        self._sell_orders = []
+        """
+        transaction structure
+            - ticker
+            - date
+            - price
+            - ls: long is True / short is False
+            - buy: False
+        """
+        self._transactions = []
+        """
+        portfolio structure
+            - ticker
+            - buy_date
+            - buy_price
+            - sell_date
+            - sell_price
+            - ls
+        """
+        self._portfolios = []
+
+    def get_transaction(self):
+        return self._transactions
+    
+
+    def get_pls(self):
+        return self._pls
+    
+    def get_portfolios(self):
+        return self._portfolios
+
+
+    def send_limit_buy_order(self, ticker, date, price, ls) -> None:
+        
+        buy_order = {'ticker': ticker, 'date': date, 'price': price, 'ls': ls, 'buy': True}
+        self._buy_orders.append(buy_order)
+
+
+    def send_limit_sell_order(self, ticker, date, price, ls) -> None:
+        
         sell_order = {'ticker': ticker, 'date': date, 'price': price, 'ls': ls, 'buy': False}
         self._sell_orders.append(sell_order)
 
@@ -41,7 +72,7 @@ class StockAccount():
         for i in self._buy_orders:
             if i['date'] == cur_date:
     
-                if i['ls'] == True: # start a new portfolio
+                if i['ls'] == True: # start a long portfolio
                     new_portfolio = {
                         'ticker': i['ticker'], 
                         'buy_date': i['date'], 
@@ -52,7 +83,7 @@ class StockAccount():
                     }
                     self._portfolios.append(new_portfolio)
 
-                else: # close a portfolio
+                else: # close a short portfolio
 
                     for portfolio in self._portfolios:
 
@@ -80,7 +111,7 @@ class StockAccount():
 
                             self._pls.append(pl)
 
-                        break
+                            break
 
 
                 self._transactions.append(i)
@@ -91,7 +122,7 @@ class StockAccount():
         for i in self._sell_orders:
             if i['date'] == cur_date:
 
-                if i['ls'] == True: # close a new portfolio
+                if i['ls'] == True: # close a long portfolio
 
                     for portfolio in self._portfolios:
 
@@ -120,10 +151,8 @@ class StockAccount():
                             self._pls.append(pl)
 
                             break
-                    else:
-                        sys.exit(1)
                     
-                else: # start a new portfolio
+                else: # start a short portfolio
 
                     # set up a new portfolio
                     new_portfolio = {
