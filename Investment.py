@@ -135,6 +135,8 @@ class Investment():
                 
                 self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
 
+                print(f'date: {cur_date}, price: {price}, stop_win: {price * stop_win}, stop_loss: {price * stop_loss}')
+
             if len(self.stockAccount.get_portfolios()) == 1 and (self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss):
 
                 price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
