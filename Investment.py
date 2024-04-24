@@ -112,7 +112,7 @@ class Investment():
                 self.file_name.loc[index, 'buyORsell'] = 0
 
 
-    def inside_candle_strategy_stop_win_loss_ratio(self, end_date, stop_loss=0.3, ratio=1) -> None:
+    def daily_inside_candle_strategy_long_win_loss_ratio(self, end_date, loss=0.03, ratio=1) -> None:
         
         self.cal_signal()
 
@@ -122,8 +122,8 @@ class Investment():
         cur_date = self.file_name.index[0]
         end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
-        stop_loss = 1 - stop_loss
-        stop_win = 1 + stop_loss * ratio
+        stop_loss = 1 - loss
+        stop_win = 1 + loss * ratio
 
         while cur_date != end_date:
 
@@ -144,7 +144,7 @@ class Investment():
             cur_date += datetime.timedelta(days=1)
 
 
-    def inside_candle_strategy_reference_loss(self, end_date, ratio=1) -> None:
+    def daily_inside_candle_strategy_long_reference_loss(self, end_date) -> None:
         
         self.cal_signal()
 
@@ -160,14 +160,177 @@ class Investment():
 
             if len(self.stockAccount.get_portfolios()) == 0 and self.file_name.loc[cur_date, "buyORsell"] == 1:
 
+                # print(f'date: {cur_date}, current close price: {self.file_name.loc[cur_date, "close"]}, buy')
+
                 price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
                 
                 self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
 
-            if len(self.stockAccount.get_portfolios()) == 1 and (self.file_name.loc[cur_date, "close"] <= self.file_name.loc[cur_date, "max_value"] * ratio):
+            if len(self.stockAccount.get_portfolios()) == 1:
+                
+                # if self.file_name.loc[cur_date, "close"] >= self.file_name.loc[cur_date, "max_value"] * ratio: # stop win
+
+                #     print(f'date: {cur_date}, reference high: {self.file_name.loc[cur_date, "max_value"]}, current close price: {self.file_name.loc[cur_date, "close"]}, sell action: Stop Win')
+
+                #     price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                #     self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+                # print(self.file_name.loc[cur_date, "close"], self.file_name.loc[cur_date, "min_value"])
+                
+                if self.file_name.loc[cur_date, "close"] < self.file_name.loc[cur_date - datetime.timedelta(days=1), "min_value"]: # stop loss
+
+                    # print(f'date: {cur_date}, reference high: {self.file_name.loc[cur_date, "max_value"]}, current close price: {self.file_name.loc[cur_date, "close"]}, sell action: Stop Loss')
+
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                    self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+            cur_date += datetime.timedelta(days=1)
+
+
+    def daily_inside_candle_strategy_long_short_win_loss_ratio(self, end_date, loss=0.03, ratio=1) -> None:
+        
+        self.cal_signal()
+
+        self.file_name.set_index("date", inplace=True)
+        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
+
+        cur_date = self.file_name.index[0]
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        long_stop_loss = 1 - loss
+        long_stop_win = 1 + loss * ratio
+
+        short_stop_loss = 1 + loss
+        short_stop_win = 1 - loss * ratio
+
+        while cur_date != end_date:
+
+            self.stockAccount.execute_limit_order(cur_date=cur_date)
+
+            cur_portfolios = self.stockAccount.get_portfolios()
+
+            if len(cur_portfolios) == 0:
+                
+                if self.file_name.loc[cur_date, "buyORsell"] == 1:
+
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+                    
+                    self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+                elif self.file_name.loc[cur_date, "buyORsell"] == -1:
+
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                    self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=False)
+
+            if len(cur_portfolios) == 1:
+
+                # print(cur_portfolios)
+
+                if cur_portfolios[0]['ls'] == True and (self.file_name.loc[cur_date, "close"] >= cur_portfolios[0]['buy_price'] * long_stop_win or self.file_name.loc[cur_date, "close"] <= cur_portfolios[0]['buy_price'] * long_stop_loss):
+
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                    self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+                if cur_portfolios[0]['ls'] == False and (self.file_name.loc[cur_date, "close"] <= cur_portfolios[0]['sell_price'] * short_stop_win or self.file_name.loc[cur_date, "close"] >= cur_portfolios[0]['sell_price'] * short_stop_loss):
+
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                    self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=False)
+
+            cur_date += datetime.timedelta(days=1)
+
+
+    def daily_inside_candle_strategy_long_ema_reference_loss(self, end_date, ema=20) -> None:
+
+        self.cal_signal()
+
+        self.file_name.set_index("date", inplace=True)
+        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
+
+        ema_col = str(ema) + '_EMA'
+        
+        ema_1 = self.exponential_moving_average(length=ema, column=ema_col)
+
+        self.file_name = pd.concat([self.file_name, ema_1], axis=1)
+
+        cur_date = self.file_name.index[0]
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        while cur_date != end_date:
+
+            self.stockAccount.execute_limit_order(cur_date=cur_date)
+
+            if len(self.stockAccount.get_portfolios()) == 0 and self.file_name.loc[cur_date, "buyORsell"] == 1 and self.file_name.loc[cur_date, "close"] > self.file_name.loc[cur_date, ema_col]:
 
                 price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+                
+                self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
 
-                self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+                # print(f'date: {cur_date}, buy_price: {price}')
+
+            if len(self.stockAccount.get_portfolios()) == 1:
+                
+                if self.file_name.loc[cur_date, "close"] < self.file_name.loc[cur_date - datetime.timedelta(days=1), "min_value"]: # stop loss
+
+                    # print(f'date: {cur_date}, reference high: {self.file_name.loc[cur_date, "max_value"]}, current close price: {self.file_name.loc[cur_date, "close"]}, sell action: Stop Loss')
+
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                    self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+            cur_date += datetime.timedelta(days=1)
+
+
+    def daily_inside_candle_strategy_long_ema_win_loss_ratio(self, end_date, loss=0.03, ratio=1, ema=20) -> None:
+
+        self.cal_signal()
+
+        self.file_name.set_index("date", inplace=True)
+        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
+
+        ema_col = str(ema) + '_EMA'
+        
+        ema_1 = self.exponential_moving_average(length=ema, column=ema_col)
+
+        self.file_name = pd.concat([self.file_name, ema_1], axis=1)
+
+        cur_date = self.file_name.index[0]
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        
+        stop_loss = 1 - loss
+        stop_win = 1 + loss * ratio
+
+        # print(stop_win)
+
+        while cur_date != end_date:
+
+            self.stockAccount.execute_limit_order(cur_date=cur_date)
+
+            if len(self.stockAccount.get_portfolios()) == 0 and self.file_name.loc[cur_date, "buyORsell"] == 1 and self.file_name.loc[cur_date, "close"] > self.file_name.loc[cur_date, ema_col]:
+
+                price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+                
+                self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+                # print(f'date: {cur_date}, buy_price: {price}')
+
+            if len(self.stockAccount.get_portfolios()) == 1:
+                
+                if self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss:
+
+                    # print()
+                    
+                    # print(f'date: {cur_date}, closing price: {self.file_name.loc[cur_date, "close"]}, stop win price: {self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win}, stop loss price: {self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss}, sell: True')
+                    
+                    price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
+
+                    self.stockAccount.send_limit_sell_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
+
+                # else:
+
+                    # print(f'date: {cur_date}, closing price: {self.file_name.loc[cur_date, "close"]}, stop win price: {self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win}, stop loss price: {self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss}, sell: False')
 
             cur_date += datetime.timedelta(days=1)

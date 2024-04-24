@@ -91,9 +91,9 @@ class StockAccount():
                             
                             buy_price = i['price']
 
-                            sell_price = portfolio['price']
+                            sell_price = portfolio['sell_price']
 
-                            pl = buy_price - sell_price
+                            pl = sell_price - buy_price
                             
                             pl_percent = (pl / sell_price) * 100
                             
@@ -102,7 +102,8 @@ class StockAccount():
                                 'buy_date': i['date'], 
                                 'buy_price': i['price'], 
                                 'sell_date': portfolio['sell_date'], 
-                                'sell_price': portfolio['sell_price'], 
+                                'sell_price': portfolio['sell_price'],
+                                'ls': False,
                                 'pl': pl,
                                 'pl_percent': pl_percent
                             }
@@ -141,7 +142,8 @@ class StockAccount():
                                 'buy_date': portfolio['buy_date'], 
                                 'buy_price': portfolio['buy_price'], 
                                 'sell_date': i['date'], 
-                                'sell_price': i['price'], 
+                                'sell_price': i['price'],
+                                'ls': True, 
                                 'pl': pl,
                                 'pl_percent': pl_percent
                             }
