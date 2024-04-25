@@ -66,7 +66,7 @@ class Investment():
             cur_date += datetime.timedelta(days=1)
 
 
-    def cal_signal(self) -> None:
+    def cal_signal(self, num_of_bar = 3) -> None:
 
         self.file_name['max_value'] = None
         self.file_name['min_value'] = None
@@ -102,25 +102,34 @@ class Investment():
 
         for index, row in self.file_name.iterrows():
 
-            if row['signal_diff'] <= -3 and row['close'] > self.file_name['max_value'].iloc[index - 1]:
+            if row['signal_diff'] <= -num_of_bar and row['close'] > self.file_name['max_value'].iloc[index - 1]:
                 self.file_name.loc[index, 'buyORsell'] = 1
 
-            elif row['signal_diff'] <= -3 and row['close'] < self.file_name['min_value'].iloc[index - 1]:
+            elif row['signal_diff'] <= -num_of_bar and row['close'] < self.file_name['min_value'].iloc[index - 1]:
                 self.file_name.loc[index, 'buyORsell'] = -1
 
             else:
                 self.file_name.loc[index, 'buyORsell'] = 0
 
 
-    def daily_inside_candle_strategy_long_win_loss_ratio(self, end_date, loss=0.03, ratio=1) -> None:
+    def daily_inside_candle_strategy_long_win_loss_ratio(self, cur_date, end_date, loss=0.03, ratio=1) -> None:
         
-        self.cal_signal()
+        self.file_name["date"] = pd.to_datetime(self.file_name["date"], format="%Y-%m-%d")
+
+        self.file_name[self.file_name.date.between(cur_date, end_date)]
+
+        cur_date = datetime.datetime.strptime(cur_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        # self.file_name = self.file_name[(self.file_name["date"] >= cur_date) and (self.file_name["date"] <= end_date)]
+
+        self.cal_signal(num_of_bar=3)
 
         self.file_name.set_index("date", inplace=True)
-        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
+        # self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
 
-        cur_date = self.file_name.index[0]
-        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        # cur_date = self.file_name.index[0]
+        # end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
         stop_loss = 1 - loss
         stop_win = 1 + loss * ratio
@@ -135,7 +144,7 @@ class Investment():
                 
                 self.stockAccount.send_limit_buy_order(ticker=self.ticker, date=cur_date + datetime.timedelta(days=1), price=price, ls=True)
 
-                print(f'date: {cur_date}, price: {price}, stop_win: {price * stop_win}, stop_loss: {price * stop_loss}')
+                # print(f'date: {cur_date}, price: {price}, stop_win: {price * stop_win}, stop_loss: {price * stop_loss}')
 
             if len(self.stockAccount.get_portfolios()) == 1 and (self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss):
 
@@ -146,16 +155,20 @@ class Investment():
             cur_date += datetime.timedelta(days=1)
 
 
-    def daily_inside_candle_strategy_long_reference_loss(self, end_date) -> None:
+    def daily_inside_candle_strategy_long_reference_loss(self, cur_date, end_date, num_of_bar=3) -> None:
         
-        self.cal_signal()
+        self.file_name["date"] = pd.to_datetime(self.file_name["date"], format="%Y-%m-%d")
 
-        self.file_name.set_index("date", inplace=True)
-        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
+        self.file_name[self.file_name.date.between(cur_date, end_date)]
 
-        cur_date = self.file_name.index[0]
+        cur_date = datetime.datetime.strptime(cur_date, "%Y-%m-%d")
         end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
+
+        self.cal_signal(num_of_bar=3)
+
+        self.file_name.set_index("date", inplace=True)
+        
         while cur_date != end_date:
 
             self.stockAccount.execute_limit_order(cur_date=cur_date)
@@ -190,9 +203,9 @@ class Investment():
             cur_date += datetime.timedelta(days=1)
 
 
-    def daily_inside_candle_strategy_long_short_win_loss_ratio(self, end_date, loss=0.03, ratio=1) -> None:
+    def daily_inside_candle_strategy_long_short_win_loss_ratio(self, cur_date, end_date, loss=0.03, ratio=1) -> None:
         
-        self.cal_signal()
+        self.cal_signal(num_of_bar=3)
 
         self.file_name.set_index("date", inplace=True)
         self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
@@ -245,12 +258,19 @@ class Investment():
             cur_date += datetime.timedelta(days=1)
 
 
-    def daily_inside_candle_strategy_long_ema_reference_loss(self, end_date, ema=20) -> None:
+    def daily_inside_candle_strategy_long_ema_reference_loss(self, cur_date, end_date, ema=20) -> None:
 
-        self.cal_signal()
+        self.file_name["date"] = pd.to_datetime(self.file_name["date"], format="%Y-%m-%d")
+
+        self.file_name[self.file_name.date.between(cur_date, end_date)]
+
+        cur_date = datetime.datetime.strptime(cur_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+
+        self.cal_signal(num_of_bar=3)
 
         self.file_name.set_index("date", inplace=True)
-        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
 
         ema_col = str(ema) + '_EMA'
         
@@ -258,8 +278,8 @@ class Investment():
 
         self.file_name = pd.concat([self.file_name, ema_1], axis=1)
 
-        cur_date = self.file_name.index[0]
-        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+        # cur_date = self.file_name.index[0]
+        # end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
         while cur_date != end_date:
 
@@ -286,21 +306,24 @@ class Investment():
             cur_date += datetime.timedelta(days=1)
 
 
-    def daily_inside_candle_strategy_long_ema_win_loss_ratio(self, end_date, loss=0.03, ratio=1, ema=20) -> None:
+    def daily_inside_candle_strategy_long_ema_win_loss_ratio(self, cur_date, end_date, loss=0.03, ratio=1, ema=20) -> None:
 
-        self.cal_signal()
+        self.file_name["date"] = pd.to_datetime(self.file_name["date"], format="%Y-%m-%d")
+
+        self.file_name[self.file_name.date.between(cur_date, end_date)]
+
+        cur_date = datetime.datetime.strptime(cur_date, "%Y-%m-%d")
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+        self.cal_signal(num_of_bar=3)
 
         self.file_name.set_index("date", inplace=True)
-        self.file_name.index = pd.to_datetime(self.file_name.index, format="%Y-%m-%d")
 
         ema_col = str(ema) + '_EMA'
         
         ema_1 = self.exponential_moving_average(length=ema, column=ema_col)
 
         self.file_name = pd.concat([self.file_name, ema_1], axis=1)
-
-        cur_date = self.file_name.index[0]
-        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
         
         stop_loss = 1 - loss
         stop_win = 1 + loss * ratio
