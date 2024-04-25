@@ -3,6 +3,16 @@ import sys
 class StockAccount():
 
     def __init__(self) -> None:
+
+        # initial_cap = 1000000
+        """
+        daily_account_infos structure
+            - date
+            - capital
+            - profit and loss
+        """
+        # self._daily_account_infos = []
+
         """
         pl structure
             - ticker
@@ -14,16 +24,20 @@ class StockAccount():
             - pl_percent
         """
         self._pls = []
+
         """
         order structure
             - ticker
             - date
             - price
+            - quantity
             - ls: long is True / short is False
             - buy: False
         """
+
         self._buy_orders = []
         self._sell_orders = []
+
         """
         transaction structure
             - ticker
@@ -33,6 +47,7 @@ class StockAccount():
             - buy: False
         """
         self._transactions = []
+
         """
         portfolio structure
             - ticker
@@ -54,6 +69,8 @@ class StockAccount():
     def get_portfolios(self):
         return self._portfolios
 
+    def get_daily_account_info(self):
+        return self._daily_account_infos
 
     def send_limit_buy_order(self, ticker, date, price, ls) -> None:
         
@@ -67,6 +84,13 @@ class StockAccount():
         self._sell_orders.append(sell_order)
 
 
+    # def update_daily_account_infos(self, cur_date, price):
+    #     if len(self._daily_account_infos) == 0:
+
+    #     if len(self._portfolios) == 0:
+    #         daily_account_info = {'date': cur_date, 'capital': self._portfolios[-1]['capital'], 'pl': 0}
+    #         self._portfolios.append(daily_account_info)
+        
     def execute_limit_order(self, cur_date) -> None:
 
         for i in self._buy_orders:
