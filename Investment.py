@@ -165,7 +165,7 @@ class Investment():
         end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
 
 
-        self.cal_signal(num_of_bar=3)
+        self.cal_signal(num_of_bar)
 
         self.file_name.set_index("date", inplace=True)
         
