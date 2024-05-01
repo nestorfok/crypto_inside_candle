@@ -1,4 +1,4 @@
-from StockAccount import StockAccount
+from backtest.StockAccount import StockAccount
 
 import pandas as pd
 import datetime
@@ -148,7 +148,7 @@ class Investment():
 
             if len(self.stockAccount.get_portfolios()) == 1:
                 
-                if self.file_name.loc[cur_date, "close"] < self.file_name.loc[cur_date - datetime.timedelta(days=1), "min_value"] or self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss:
+                if (self.file_name.loc[cur_date, "close"] < self.file_name.loc[cur_date - datetime.timedelta(days=1), "min_value"]) or (self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win) or (self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss):
 
                     price = self.file_name.loc[cur_date + datetime.timedelta(days=1), 'open']
 
@@ -346,7 +346,7 @@ class Investment():
 
             if len(self.stockAccount.get_portfolios()) == 1:
                 
-                if self.file_name.loc[cur_date, "close"] < self.file_name.loc[cur_date - datetime.timedelta(days=1), "min_value"] or self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss:
+                if self.file_name.loc[cur_date, "close"] < self.file_name.loc[cur_date - datetime.timedelta(days=1)] or self.file_name.loc[cur_date, "close"] >= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_win or self.file_name.loc[cur_date, "close"] <= self.stockAccount.get_portfolios()[0]['buy_price'] * stop_loss:
 
                     # print()
                     
